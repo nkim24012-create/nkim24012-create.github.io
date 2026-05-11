@@ -1,306 +1,130 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Hệ thống luyện thi</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <style>
-    *{
-      margin:0;
-      padding:0;
-      box-sizing:border-box;
-      font-family:Arial,sans-serif;
-    }
+<title>Luyện thi PDF</title>
 
-    body{
-      background:#f1f5f9;
-      height:100vh;
-      overflow:hidden;
-    }
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
-    .app{
-      display:flex;
-      height:100vh;
-    }
+<style>
 
-    /* SIDEBAR */
+body{
+  font-family:Arial;
+  background:#f1f5f9;
+  padding:20px;
+}
 
-    .sidebar{
-      width:260px;
-      background:#0f172a;
-      color:white;
-      padding:20px;
-      overflow-y:auto;
-    }
+.container{
+  max-width:1000px;
+  margin:auto;
+}
 
-    .sidebar h2{
-      margin-bottom:20px;
-    }
+.card{
+  background:white;
+  padding:20px;
+  border-radius:16px;
+  margin-bottom:20px;
+  box-shadow:0 2px 10px rgba(0,0,0,0.08);
+}
 
-    .subject-list{
-      display:flex;
-      flex-direction:column;
-      gap:10px;
-    }
+button{
+  border:none;
+  padding:12px 18px;
+  border-radius:10px;
+  background:#2563eb;
+  color:white;
+  cursor:pointer;
+}
 
-    .subject-btn{
-      border:none;
-      background:#1e293b;
-      color:white;
-      padding:14px;
-      border-radius:10px;
-      cursor:pointer;
-      text-align:left;
-      transition:0.2s;
-    }
+button:hover{
+  background:#1d4ed8;
+}
 
-    .subject-btn:hover{
-      background:#334155;
-    }
+.question{
+  margin-bottom:24px;
+  border-bottom:1px solid #eee;
+  padding-bottom:20px;
+}
 
-    .subject-btn.active{
-      background:#2563eb;
-    }
+.option{
+  display:block;
+  padding:10px;
+  background:#f8fafc;
+  margin-bottom:10px;
+  border-radius:10px;
+}
 
-    /* CONTENT */
+.option:hover{
+  background:#e2e8f0;
+}
 
-    .content{
-      flex:1;
-      padding:24px;
-      overflow-y:auto;
-    }
+select,
+input{
+  padding:10px;
+  margin-bottom:10px;
+}
 
-    .topbar{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      margin-bottom:20px;
-      flex-wrap:wrap;
-      gap:20px;
-    }
-
-    .progress-box{
-      background:white;
-      width:320px;
-      padding:16px;
-      border-radius:12px;
-      box-shadow:0 2px 8px rgba(0,0,0,0.08);
-    }
-
-    .progress-title{
-      margin-bottom:10px;
-      font-weight:bold;
-    }
-
-    .progress-bar{
-      height:14px;
-      background:#e2e8f0;
-      border-radius:999px;
-      overflow:hidden;
-    }
-
-    .progress-fill{
-      height:100%;
-      width:0%;
-      background:#22c55e;
-      transition:0.3s;
-    }
-
-    .exam-box{
-      background:white;
-      padding:24px;
-      border-radius:16px;
-      box-shadow:0 2px 10px rgba(0,0,0,0.08);
-    }
-
-    .toolbar{
-      margin-bottom:20px;
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-    }
-
-    select,
-    input[type=file]{
-      padding:12px;
-      border-radius:10px;
-      border:1px solid #cbd5e1;
-    }
-
-    .upload-btn,
-    .submit-btn{
-      border:none;
-      background:#2563eb;
-      color:white;
-      padding:12px 20px;
-      border-radius:10px;
-      cursor:pointer;
-      transition:0.2s;
-    }
-
-    .upload-btn:hover,
-    .submit-btn:hover{
-      background:#1d4ed8;
-    }
-
-    .exam-title{
-      font-size:28px;
-      margin-bottom:20px;
-    }
-
-    .question{
-      margin-bottom:24px;
-      border-bottom:1px solid #eee;
-      padding-bottom:20px;
-    }
-
-    .question h3{
-      margin-bottom:14px;
-    }
-
-    .option{
-      display:block;
-      padding:12px;
-      background:#f8fafc;
-      border-radius:10px;
-      margin-bottom:10px;
-      cursor:pointer;
-    }
-
-    .option:hover{
-      background:#e2e8f0;
-    }
-
-    .score-box{
-      margin-top:20px;
-      padding:16px;
-      background:#dcfce7;
-      border-radius:12px;
-      color:#166534;
-      display:none;
-    }
-
-    .loading{
-      color:#64748b;
-      font-size:18px;
-    }
-
-    @media(max-width:768px){
-
-      .app{
-        flex-direction:column;
-      }
-
-      .sidebar{
-        width:100%;
-      }
-
-      .progress-box{
-        width:100%;
-      }
-    }
-  </style>
+</style>
 </head>
 
 <body>
 
-<div class="app">
+<div class="container">
 
-  <!-- SIDEBAR -->
+  <div class="card">
 
-  <div class="sidebar">
+    <h2>Upload đề thi PDF</h2>
 
-    <h2>📚 Môn học</h2>
+    <select id="subject">
+      <option value="math">Toán</option>
+      <option value="physics">Lý</option>
+      <option value="chemistry">Hóa</option>
+      <option value="literature">Văn</option>
+    </select>
 
-    <div class="subject-list" id="subjectList"></div>
+    <br/>
+
+    <input
+      type="file"
+      id="pdfInput"
+      accept=".pdf"
+    />
+
+    <br/>
+
+    <button onclick="uploadPDF()">
+      Convert PDF
+    </button>
 
   </div>
 
-  <!-- CONTENT -->
+  <div class="card">
 
-  <div class="content">
+    <h2>Danh sách đề thi</h2>
 
-    <div class="topbar">
+    <select id="examList">
+      <option value="">
+        -- Chọn đề --
+      </option>
+    </select>
 
-      <h1 id="currentSubject">
-        Chọn môn học
-      </h1>
+    <button onclick="loadExam()">
+      Mở đề
+    </button>
 
-      <div class="progress-box">
+  </div>
 
-        <div class="progress-title">
-          Tiến độ
-        </div>
+  <div class="card">
 
-        <div class="progress-bar">
-          <div
-            class="progress-fill"
-            id="progressFill"
-          ></div>
-        </div>
+    <div id="examContent">
 
-        <div
-          style="margin-top:10px;"
-          id="progressText"
-        >
-          0%
-        </div>
-
-      </div>
+      Chưa có đề thi
 
     </div>
 
-    <div class="exam-box">
-
-      <!-- TOOLBAR -->
-
-      <div class="toolbar">
-
-        <select id="examSelect">
-          <option value="">
-            -- Chọn đề thi --
-          </option>
-        </select>
-
-        <select id="subjectUpload">
-          <option value="math">Toán</option>
-          <option value="physics">Lý</option>
-          <option value="chemistry">Hóa</option>
-          <option value="literature">Văn</option>
-        </select>
-
-        <input
-          type="file"
-          id="pdfInput"
-          accept=".pdf"
-        />
-
-        <button
-          class="upload-btn"
-          onclick="uploadPDF()"
-        >
-          Upload PDF
-        </button>
-
-      </div>
-
-      <!-- EXAM -->
-
-      <div id="examContent">
-
-        <div class="loading">
-          Chọn môn học để bắt đầu.
-        </div>
-
-      </div>
-
-      <div
-        class="score-box"
-        id="scoreBox"
-      ></div>
-
-    </div>
+    <div id="scoreBox"></div>
 
   </div>
 
@@ -308,180 +132,225 @@
 
 <script>
 
-const subjects = [
-  {
-    id:"math",
-    name:"Toán"
-  },
-  {
-    id:"physics",
-    name:"Lý"
-  },
-  {
-    id:"chemistry",
-    name:"Hóa"
-  },
-  {
-    id:"literature",
-    name:"Văn"
-  }
-];
-
-let currentSubject = null;
 let currentExam = null;
 
-const subjectList =
-  document.getElementById("subjectList");
+/* LOAD EXAMS */
 
-const examSelect =
-  document.getElementById("examSelect");
+function refreshExamList(){
 
-const examContent =
-  document.getElementById("examContent");
+  const examList =
+    document.getElementById("examList");
 
-const scoreBox =
-  document.getElementById("scoreBox");
+  examList.innerHTML =
+    `<option value="">
+      -- Chọn đề --
+    </option>`;
 
-/* RENDER SUBJECTS */
+  const exams =
+    JSON.parse(
+      localStorage.getItem("exams")
+      || "[]"
+    );
 
-function renderSubjects(){
+  exams.forEach((exam,index)=>{
 
-  subjects.forEach(subject=>{
-
-    const btn =
-      document.createElement("button");
-
-    btn.className = "subject-btn";
-
-    btn.innerText = subject.name;
-
-    btn.dataset.id = subject.id;
-
-    btn.onclick = ()=>{
-
-      selectSubject(subject);
-    };
-
-    subjectList.appendChild(btn);
+    examList.innerHTML += `
+      <option value="${index}">
+        ${exam.title}
+      </option>
+    `;
 
   });
 
 }
 
-/* SELECT SUBJECT */
+/* PDF TO TEXT */
 
-async function selectSubject(subject){
+async function extractText(file){
 
-  currentSubject = subject;
+  const arrayBuffer =
+    await file.arrayBuffer();
 
-  document.getElementById(
-    "currentSubject"
-  ).innerText =
-    `Môn ${subject.name}`;
+  const pdf =
+    await pdfjsLib.getDocument({
+      data:arrayBuffer
+    }).promise;
 
-  document
-    .querySelectorAll(".subject-btn")
-    .forEach(btn=>{
+  let text = "";
 
-      btn.classList.remove("active");
+  for(let i=1;i<=pdf.numPages;i++){
 
-    });
+    const page =
+      await pdf.getPage(i);
 
-  document
-    .querySelector(
-      `[data-id="${subject.id}"]`
-    )
-    .classList.add("active");
+    const content =
+      await page.getTextContent();
 
-  examContent.innerHTML = `
-    <div class="loading">
-      Đang tải danh sách đề...
-    </div>
-  `;
-
-  try{
-
-    const res = await fetch(
-      `/api/exams/${subject.id}`
-    );
-
-    const exams = await res.json();
-
-    examSelect.innerHTML =
-      `<option value="">
-        -- Chọn đề thi --
-      </option>`;
-
-    exams.forEach(file=>{
-
-      examSelect.innerHTML += `
-        <option value="${file}">
-          ${file}
-        </option>
-      `;
-
-    });
-
-    examSelect.onchange = async ()=>{
-
-      if(!examSelect.value) return;
-
-      loadExam(
-        subject.id,
-        examSelect.value
+    const strings =
+      content.items.map(
+        item=>item.str
       );
 
-    };
-
-  }catch(err){
-
-    examContent.innerHTML = `
-      <div class="loading">
-        Không tải được đề thi.
-      </div>
-    `;
-
-    console.error(err);
+    text += strings.join(" ") + "\n";
 
   }
+
+  return text;
+
+}
+
+/* PARSE QUESTIONS */
+
+function parseQuestions(text){
+
+  const questions = [];
+
+  const blocks =
+    text.match(
+      /Câu\s*\d+[\s\S]*?(?=Câu\s*\d+|$)/g
+    );
+
+  if(!blocks) return questions;
+
+  blocks.forEach(block=>{
+
+    try{
+
+      const questionMatch =
+        block.match(
+          /Câu\s*\d+[:.]?\s*(.*?)\s*A\./
+        );
+
+      if(!questionMatch) return;
+
+      const question =
+        questionMatch[1].trim();
+
+      const optionMatch =
+        block.match(
+          /A\.\s*(.*?)\s*B\.\s*(.*?)\s*C\.\s*(.*?)\s*D\.\s*(.*?)(Đáp án[:.]?\s*[ABCD]|$)/
+        );
+
+      if(!optionMatch) return;
+
+      const options = [
+        optionMatch[1].trim(),
+        optionMatch[2].trim(),
+        optionMatch[3].trim(),
+        optionMatch[4].trim()
+      ];
+
+      const answerMatch =
+        block.match(
+          /Đáp án[:.]?\s*([ABCD])/
+        );
+
+      let answer = 0;
+
+      if(answerMatch){
+
+        const map = {
+          A:0,
+          B:1,
+          C:2,
+          D:3
+        };
+
+        answer =
+          map[answerMatch[1]];
+
+      }
+
+      questions.push({
+        question,
+        options,
+        answer
+      });
+
+    }catch(err){
+
+      console.log(err);
+
+    }
+
+  });
+
+  return questions;
+
+}
+
+/* UPLOAD PDF */
+
+async function uploadPDF(){
+
+  const file =
+    document.getElementById(
+      "pdfInput"
+    ).files[0];
+
+  if(!file){
+
+    alert("Chọn file PDF");
+
+    return;
+  }
+
+  const text =
+    await extractText(file);
+
+  const questions =
+    parseQuestions(text);
+
+  const exam = {
+    title:file.name,
+    subject:
+      document.getElementById(
+        "subject"
+      ).value,
+    questions
+  };
+
+  const exams =
+    JSON.parse(
+      localStorage.getItem("exams")
+      || "[]"
+    );
+
+  exams.push(exam);
+
+  localStorage.setItem(
+    "exams",
+    JSON.stringify(exams)
+  );
+
+  alert(
+    `Đã convert ${questions.length} câu`
+  );
+
+  refreshExamList();
 
 }
 
 /* LOAD EXAM */
 
-async function loadExam(subject,file){
+function loadExam(){
 
-  examContent.innerHTML = `
-    <div class="loading">
-      Đang tải đề thi...
-    </div>
-  `;
+  const index =
+    document.getElementById(
+      "examList"
+    ).value;
 
-  try{
+  if(index==="") return;
 
-    const res = await fetch(
-      `/exams/${subject}/${file}`
+  const exams =
+    JSON.parse(
+      localStorage.getItem("exams")
+      || "[]"
     );
 
-    const data = await res.json();
+  currentExam = exams[index];
 
-    currentExam = data;
-
-    renderExam(data);
-
-    updateProgress();
-
-  }catch(err){
-
-    examContent.innerHTML = `
-      <div class="loading">
-        Không tải được đề thi.
-      </div>
-    `;
-
-    console.error(err);
-
-  }
+  renderExam(currentExam);
 
 }
 
@@ -490,9 +359,7 @@ async function loadExam(subject,file){
 function renderExam(exam){
 
   let html = `
-    <div class="exam-title">
-      ${exam.title}
-    </div>
+    <h2>${exam.title}</h2>
   `;
 
   exam.questions.forEach((q,index)=>{
@@ -513,7 +380,7 @@ function renderExam(exam){
 
           <input
             type="radio"
-            name="question-${index}"
+            name="q-${index}"
             value="${optIndex}"
           />
 
@@ -529,15 +396,14 @@ function renderExam(exam){
   });
 
   html += `
-    <button
-      class="submit-btn"
-      onclick="submitExam()"
-    >
+    <button onclick="submitExam()">
       Nộp bài
     </button>
   `;
 
-  examContent.innerHTML = html;
+  document.getElementById(
+    "examContent"
+  ).innerHTML = html;
 
 }
 
@@ -553,169 +419,38 @@ function submitExam(){
 
     const selected =
       document.querySelector(
-        `input[name="question-${index}"]:checked`
+        `input[name="q-${index}"]:checked`
       );
 
     if(
       selected &&
-      Number(selected.value) === q.answer
+      Number(selected.value)===q.answer
     ){
       score++;
     }
 
   });
 
-  const percent = Math.round(
-    (score/currentExam.questions.length)*100
-  );
+  const percent =
+    Math.round(
+      score/currentExam.questions.length*100
+    );
 
-  scoreBox.style.display = "block";
+  document.getElementById(
+    "scoreBox"
+  ).innerHTML = `
+    <h2>
+      ${score}/${currentExam.questions.length}
+    </h2>
 
-  scoreBox.innerHTML = `
-    ✅ Bạn đạt
-    ${score}/${currentExam.questions.length}
-    <br/><br/>
-    Tỷ lệ đúng: ${percent}%
+    <p>
+      Đúng ${percent}%
+    </p>
   `;
 
-  saveResult({
-    subject:currentSubject.id,
-    score,
-    total:currentExam.questions.length
-  });
-
-  updateProgress();
-
 }
 
-/* SAVE RESULT */
-
-function saveResult(result){
-
-  const results =
-    JSON.parse(
-      localStorage.getItem("exam_results")
-      || "[]"
-    );
-
-  results.push(result);
-
-  localStorage.setItem(
-    "exam_results",
-    JSON.stringify(results)
-  );
-
-}
-
-/* UPDATE PROGRESS */
-
-function updateProgress(){
-
-  if(!currentSubject) return;
-
-  const results =
-    JSON.parse(
-      localStorage.getItem("exam_results")
-      || "[]"
-    );
-
-  const subjectResults =
-    results.filter(
-      r=>r.subject === currentSubject.id
-    );
-
-  if(subjectResults.length===0){
-
-    document.getElementById(
-      "progressFill"
-    ).style.width = "0%";
-
-    document.getElementById(
-      "progressText"
-    ).innerText = "Chưa có dữ liệu";
-
-    return;
-
-  }
-
-  const avg =
-    subjectResults.reduce((sum,r)=>{
-
-      return sum +
-        (r.score/r.total)*100;
-
-    },0) / subjectResults.length;
-
-  document.getElementById(
-    "progressFill"
-  ).style.width = `${avg}%`;
-
-  document.getElementById(
-    "progressText"
-  ).innerText =
-    `${Math.round(avg)}% trung bình`;
-
-}
-
-/* UPLOAD PDF */
-
-async function uploadPDF(){
-
-  const file =
-    document.getElementById(
-      "pdfInput"
-    ).files[0];
-
-  const subject =
-    document.getElementById(
-      "subjectUpload"
-    ).value;
-
-  if(!file){
-
-    alert("Chọn file PDF");
-
-    return;
-  }
-
-  const formData = new FormData();
-
-  formData.append("pdf",file);
-
-  formData.append("subject",subject);
-
-  try{
-
-    const res = await fetch(
-      "/upload",
-      {
-        method:"POST",
-        body:formData
-      }
-    );
-
-    const text = await res.text();
-
-    alert(text);
-
-    if(
-      currentSubject &&
-      currentSubject.id === subject
-    ){
-      selectSubject(currentSubject);
-    }
-
-  }catch(err){
-
-    alert("Upload thất bại");
-
-    console.error(err);
-
-  }
-
-}
-
-renderSubjects();
+refreshExamList();
 
 </script>
 
