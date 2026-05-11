@@ -2,9 +2,14 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<title>App luyện thi cá nhân</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Luyện thi PDF</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
 <style>
+
 body{
   font-family:Arial;
   background:#f1f5f9;
@@ -12,53 +17,54 @@ body{
 }
 
 .container{
-  max-width:900px;
+  max-width:1000px;
   margin:auto;
 }
 
 .card{
   background:white;
   padding:20px;
-  border-radius:14px;
+  border-radius:16px;
   margin-bottom:20px;
   box-shadow:0 2px 10px rgba(0,0,0,0.08);
 }
 
-select,button{
-  padding:10px;
-  margin:5px 0;
-}
-
-.question{
-  margin-top:20px;
-  padding-bottom:15px;
-  border-bottom:1px solid #eee;
-}
-
-.option{
-  display:block;
-  padding:8px;
-  margin:5px 0;
-  background:#f8fafc;
-  border-radius:8px;
-  cursor:pointer;
-}
-
-.option:hover{
-  background:#e2e8f0;
-}
-
 button{
+  border:none;
+  padding:12px 18px;
+  border-radius:10px;
   background:#2563eb;
   color:white;
-  border:none;
-  border-radius:8px;
   cursor:pointer;
 }
 
 button:hover{
   background:#1d4ed8;
 }
+
+.question{
+  margin-bottom:24px;
+  border-bottom:1px solid #eee;
+  padding-bottom:20px;
+}
+
+.option{
+  display:block;
+  padding:10px;
+  background:#f8fafc;
+  margin-bottom:10px;
+  border-radius:10px;
+}
+
+.option:hover{
+  background:#e2e8f0;
+}
+
+select,input{
+  padding:10px;
+  margin-bottom:10px;
+}
+
 </style>
 </head>
 
@@ -66,40 +72,70 @@ button:hover{
 
 <div class="container">
 
+  <!-- UPLOAD -->
   <div class="card">
 
-    <h2>📚 App luyện thi cá nhân</h2>
-
-    <label>Môn học:</label><br>
+    <h2>Upload đề thi PDF</h2>
 
     <select id="subject">
+
       <option value="math">Toán</option>
       <option value="physics">Lý</option>
-      <option value="english">Anh văn</option>
+      <option value="chemistry">Hóa</option>
+      <option value="literature">Văn</option>
+
+      <!-- ENGLISH -->
+      <option value="english_basic">
+        Anh văn - Căn bản
+      </option>
+
+      <option value="english_advanced">
+        Anh văn - Nâng cao
+      </option>
+
     </select>
 
-    <br>
+    <br/>
 
-    <label>Cấp độ:</label><br>
+    <input
+      type="file"
+      id="pdfInput"
+      accept=".pdf"
+    />
 
-    <select id="level">
-      <option value="basic">Căn bản</option>
-      <option value="advanced">Nâng cao</option>
-    </select>
+    <br/>
 
-    <br><br>
-
-    <button onclick="loadExam()">
-      Tải đề
+    <button onclick="uploadPDF()">
+      Convert PDF
     </button>
 
   </div>
 
+  <!-- LIST -->
   <div class="card">
 
-    <div id="exam"></div>
+    <h2>Danh sách đề thi</h2>
 
-    <div id="result"></div>
+    <select id="examList">
+      <option value="">
+        -- Chọn đề --
+      </option>
+    </select>
+
+    <button onclick="loadExam()">
+      Mở đề
+    </button>
+
+  </div>
+
+  <!-- EXAM -->
+  <div class="card">
+
+    <div id="examContent">
+      Chưa có đề thi
+    </div>
+
+    <div id="scoreBox"></div>
 
   </div>
 
@@ -107,128 +143,231 @@ button:hover{
 
 <script>
 
-/* ===== DATA (TỰ NHẬP ĐỀ Ở ĐÂY) ===== */
+let currentExam = null;
 
-const exams = {
+/* REFRESH LIST */
+function refreshExamList(){
 
-  math: {
+  const examList =
+    document.getElementById("examList");
 
-    basic: [
-      {
-        question:"2 + 2 = ?",
-        options:["1","2","4","5"],
-        answer:2
-      },
-      {
-        question:"5 - 2 = ?",
-        options:["1","2","3","4"],
-        answer:2
-      }
-    ],
+  examList.innerHTML =
+    `<option value="">
+      -- Chọn đề --
+    </option>`;
 
-    advanced: [
-      {
-        question:"12 x 12 = ?",
-        options:["144","121","132","124"],
-        answer:0
-      }
-    ]
+  const exams =
+    JSON.parse(
+      localStorage.getItem("exams")
+      || "[]"
+    );
 
-  },
+  exams.forEach((exam,index)=>{
 
-  physics: {
+    examList.innerHTML += `
+      <option value="${index}">
+        ${exam.level ? "["+exam.level+"]" : ""} ${exam.title}
+      </option>
+    `;
 
-    basic: [
-      {
-        question:"Đơn vị lực là gì?",
-        options:["N","kg","m","s"],
-        answer:0
-      }
-    ],
-
-    advanced: [
-      {
-        question:"E = mc^2 là của ai?",
-        options:[
-          "Newton",
-          "Einstein",
-          "Tesla",
-          "Bohr"
-        ],
-        answer:1
-      }
-    ]
-
-  },
-
-  english: {
-
-    basic: [
-      {
-        question:"Hello nghĩa là gì?",
-        options:[
-          "Tạm biệt",
-          "Xin chào",
-          "Cảm ơn",
-          "Xin lỗi"
-        ],
-        answer:1
-      }
-    ],
-
-    advanced: [
-      {
-        question:"Từ 'beautiful' nghĩa là?",
-        options:[
-          "xấu",
-          "đẹp",
-          "nhanh",
-          "chậm"
-        ],
-        answer:1
-      }
-    ]
-
-  }
-
-};
-
-let current = [];
-
-/* ===== LOAD EXAM ===== */
-
-function loadExam(){
-
-  const subject =
-    document.getElementById("subject").value;
-
-  const level =
-    document.getElementById("level").value;
-
-  current =
-    exams[subject][level];
-
-  render();
+  });
 
 }
 
-/* ===== RENDER ===== */
+/* PDF TO TEXT */
+async function extractText(file){
 
-function render(){
+  const arrayBuffer =
+    await file.arrayBuffer();
 
-  let html = "";
+  const pdf =
+    await pdfjsLib.getDocument({
+      data:arrayBuffer
+    }).promise;
 
-  current.forEach((q,i)=>{
+  let text = "";
+
+  for(let i=1;i<=pdf.numPages;i++){
+
+    const page =
+      await pdf.getPage(i);
+
+    const content =
+      await page.getTextContent();
+
+    const strings =
+      content.items.map(
+        item=>item.str
+      );
+
+    text += strings.join(" ") + "\n";
+
+  }
+
+  return text;
+
+}
+
+/* PARSE */
+function parseQuestions(text){
+
+  const questions = [];
+
+  const blocks =
+    text.match(
+      /Câu\s*\d+[\s\S]*?(?=Câu\s*\d+|$)/g
+    );
+
+  if(!blocks) return questions;
+
+  blocks.forEach(block=>{
+
+    try{
+
+      const q =
+        block.match(
+          /Câu\s*\d+[:.]?\s*(.*?)\s*A\./
+        );
+
+      if(!q) return;
+
+      const question = q[1].trim();
+
+      const opt =
+        block.match(
+          /A\.\s*(.*?)\s*B\.\s*(.*?)\s*C\.\s*(.*?)\s*D\.\s*(.*?)(Đáp án[:.]?\s*[ABCD]|$)/
+        );
+
+      if(!opt) return;
+
+      const options = [
+        opt[1].trim(),
+        opt[2].trim(),
+        opt[3].trim(),
+        opt[4].trim()
+      ];
+
+      const ans =
+        block.match(/Đáp án[:.]?\s*([ABCD])/);
+
+      let answer = 0;
+
+      if(ans){
+
+        const map = {
+          A:0,B:1,C:2,D:3
+        };
+
+        answer = map[ans[1]];
+      }
+
+      questions.push({
+        question,
+        options,
+        answer
+      });
+
+    }catch(e){}
+
+  });
+
+  return questions;
+
+}
+
+/* UPLOAD */
+async function uploadPDF(){
+
+  const file =
+    document.getElementById("pdfInput").files[0];
+
+  if(!file){
+    alert("Chọn file PDF");
+    return;
+  }
+
+  const text =
+    await extractText(file);
+
+  const questions =
+    parseQuestions(text);
+
+  const value =
+    document.getElementById("subject").value;
+
+  let subject = value;
+  let level = null;
+
+  if(value === "english_basic"){
+    subject = "english";
+    level = "basic";
+  }
+
+  if(value === "english_advanced"){
+    subject = "english";
+    level = "advanced";
+  }
+
+  const exam = {
+    title:file.name,
+    subject,
+    level,
+    questions
+  };
+
+  const exams =
+    JSON.parse(
+      localStorage.getItem("exams")
+      || "[]"
+    );
+
+  exams.push(exam);
+
+  localStorage.setItem(
+    "exams",
+    JSON.stringify(exams)
+  );
+
+  alert("Đã convert " + questions.length + " câu");
+
+  refreshExamList();
+
+}
+
+/* LOAD EXAM */
+function loadExam(){
+
+  const index =
+    document.getElementById("examList").value;
+
+  if(index==="") return;
+
+  const exams =
+    JSON.parse(
+      localStorage.getItem("exams")
+      || "[]"
+    );
+
+  currentExam = exams[index];
+
+  renderExam(currentExam);
+
+}
+
+/* RENDER */
+function renderExam(exam){
+
+  let html = `<h2>${exam.title}</h2>`;
+
+  exam.questions.forEach((q,i)=>{
 
     html += `
       <div class="question">
 
-        <h3>
-          Câu ${i+1}: ${q.question}
-        </h3>
+        <h3>Câu ${i+1}: ${q.question}</h3>
     `;
 
-    q.options.forEach((opt,j)=>{
+    q.options.forEach((o,j)=>{
 
       html += `
         <label class="option">
@@ -238,7 +377,7 @@ function render(){
             value="${j}"
           />
 
-          ${opt}
+          ${o}
 
         </label>
       `;
@@ -255,39 +394,44 @@ function render(){
     </button>
   `;
 
-  document.getElementById("exam").innerHTML = html;
+  document.getElementById("examContent")
+    .innerHTML = html;
 
 }
 
-/* ===== SUBMIT ===== */
-
+/* SUBMIT */
 function submitExam(){
+
+  if(!currentExam) return;
 
   let score = 0;
 
-  current.forEach((q,i)=>{
+  currentExam.questions.forEach((q,i)=>{
 
-    const ans =
+    const sel =
       document.querySelector(
         `input[name="q${i}"]:checked`
       );
 
-    if(
-      ans &&
-      Number(ans.value) === q.answer
-    ){
+    if(sel && Number(sel.value)===q.answer){
       score++;
     }
 
   });
 
-  document.getElementById("result").innerHTML = `
-    <h2>Kết quả</h2>
-    <p>${score}/${current.length}</p>
-    <p>${Math.round(score/current.length*100)}%</p>
+  const percent =
+    Math.round(
+      score/currentExam.questions.length*100
+    );
+
+  document.getElementById("scoreBox").innerHTML = `
+    <h2>${score}/${currentExam.questions.length}</h2>
+    <p>${percent}%</p>
   `;
 
 }
+
+refreshExamList();
 
 </script>
 
