@@ -1,0 +1,15 @@
+{
+  "title": "Đề thi Toán số 1",
+  "questions": [
+    {
+      "question": "2 + 2 = ?",
+      "options": ["1", "2", "4", "5"],
+      "answer": 2
+    },
+    {
+      "question": "5 x 3 = ?",
+      "options": ["15", "10", "8", "20"],
+      "answer": 0
+    }
+  ]
+}
