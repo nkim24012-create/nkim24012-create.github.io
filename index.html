@@ -4,65 +4,114 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Luyện thi PDF</title>
+<title>Smart Learning App</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
 <style>
 
 body{
+  margin:0;
   font-family:Arial;
-  background:#f1f5f9;
-  padding:20px;
+  background:linear-gradient(135deg,#0f172a,#1e293b);
+  color:white;
+  min-height:100vh;
 }
+
+/* LOGIN */
+
+.login-box{
+  position:fixed;
+  top:0;left:0;
+  width:100%;
+  height:100%;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  background:rgba(0,0,0,0.6);
+  backdrop-filter:blur(10px);
+}
+
+.login-card{
+  background:rgba(255,255,255,0.1);
+  padding:30px;
+  border-radius:16px;
+  width:300px;
+  text-align:center;
+  box-shadow:0 0 20px rgba(0,0,0,0.4);
+}
+
+input,select{
+  width:100%;
+  padding:10px;
+  margin:8px 0;
+  border:none;
+  border-radius:8px;
+}
+
+/* APP */
 
 .container{
   max-width:1000px;
   margin:auto;
+  padding:20px;
 }
 
 .card{
-  background:white;
+  background:rgba(255,255,255,0.08);
+  backdrop-filter:blur(10px);
   padding:20px;
   border-radius:16px;
   margin-bottom:20px;
-  box-shadow:0 2px 10px rgba(0,0,0,0.08);
+  box-shadow:0 8px 20px rgba(0,0,0,0.3);
+  transition:0.3s;
+}
+
+.card:hover{
+  transform:translateY(-3px);
 }
 
 button{
+  padding:10px 16px;
   border:none;
-  padding:12px 18px;
   border-radius:10px;
-  background:#2563eb;
+  background:#3b82f6;
   color:white;
   cursor:pointer;
+  transition:0.3s;
 }
 
 button:hover{
-  background:#1d4ed8;
-}
-
-.question{
-  margin-bottom:24px;
-  border-bottom:1px solid #eee;
-  padding-bottom:20px;
+  background:#2563eb;
+  transform:scale(1.05);
 }
 
 .option{
   display:block;
   padding:10px;
-  background:#f8fafc;
-  margin-bottom:10px;
+  margin:6px 0;
+  background:rgba(255,255,255,0.1);
   border-radius:10px;
+  cursor:pointer;
 }
 
 .option:hover{
-  background:#e2e8f0;
+  background:rgba(255,255,255,0.2);
 }
 
-select,input{
-  padding:10px;
-  margin-bottom:10px;
+/* HEADER */
+
+.header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:20px;
+}
+
+.badge{
+  background:#22c55e;
+  padding:5px 10px;
+  border-radius:20px;
 }
 
 </style>
@@ -70,43 +119,58 @@ select,input{
 
 <body>
 
-<div class="container">
+<!-- LOGIN -->
+<div class="login-box" id="loginBox">
+
+  <div class="login-card">
+
+    <h2>Đăng nhập</h2>
+
+    <input id="username" placeholder="Username">
+
+    <button onclick="login()">
+      Vào app
+    </button>
+
+  </div>
+
+</div>
+
+<!-- APP -->
+<div class="container" id="app" style="display:none;">
+
+  <div class="header">
+
+    <h2>📚 Smart Learning</h2>
+
+    <div>
+      👤 <span id="user"></span>
+
+      <button onclick="logout()">
+        Logout
+      </button>
+    </div>
+
+  </div>
 
   <!-- UPLOAD -->
   <div class="card">
 
-    <h2>Upload đề thi PDF</h2>
+    <h3>Upload PDF</h3>
 
     <select id="subject">
-
       <option value="math">Toán</option>
       <option value="physics">Lý</option>
       <option value="chemistry">Hóa</option>
       <option value="literature">Văn</option>
-
-      <!-- ENGLISH -->
-      <option value="english_basic">
-        Anh văn - Căn bản
-      </option>
-
-      <option value="english_advanced">
-        Anh văn - Nâng cao
-      </option>
-
+      <option value="english_basic">Anh văn - Căn bản</option>
+      <option value="english_advanced">Anh văn - Nâng cao</option>
     </select>
 
-    <br/>
-
-    <input
-      type="file"
-      id="pdfInput"
-      accept=".pdf"
-    />
-
-    <br/>
+    <input type="file" id="pdfInput">
 
     <button onclick="uploadPDF()">
-      Convert PDF
+      Convert
     </button>
 
   </div>
@@ -114,26 +178,18 @@ select,input{
   <!-- LIST -->
   <div class="card">
 
-    <h2>Danh sách đề thi</h2>
+    <h3>Danh sách đề</h3>
 
-    <select id="examList">
-      <option value="">
-        -- Chọn đề --
-      </option>
-    </select>
+    <select id="examList"></select>
 
-    <button onclick="loadExam()">
-      Mở đề
-    </button>
+    <button onclick="loadExam()">Mở</button>
 
   </div>
 
   <!-- EXAM -->
   <div class="card">
 
-    <div id="examContent">
-      Chưa có đề thi
-    </div>
+    <div id="examContent">Chưa có đề</div>
 
     <div id="scoreBox"></div>
 
@@ -143,30 +199,80 @@ select,input{
 
 <script>
 
+let currentUser = null;
 let currentExam = null;
 
-/* REFRESH LIST */
+/* LOGIN SYSTEM */
+
+function login(){
+
+  const name =
+    document.getElementById("username").value;
+
+  if(!name) return;
+
+  currentUser = name;
+
+  localStorage.setItem("user",name);
+
+  document.getElementById("loginBox").style.display="none";
+
+  document.getElementById("app").style.display="block";
+
+  document.getElementById("user").innerText=name;
+
+  refreshExamList();
+
+}
+
+function logout(){
+
+  localStorage.removeItem("user");
+
+  location.reload();
+
+}
+
+/* INIT */
+
+window.onload = ()=>{
+
+  const u =
+    localStorage.getItem("user");
+
+  if(u){
+
+    currentUser=u;
+
+    document.getElementById("loginBox").style.display="none";
+
+    document.getElementById("app").style.display="block";
+
+    document.getElementById("user").innerText=u;
+
+    refreshExamList();
+
+  }
+
+}
+
+/* EXAMS STORAGE */
+
 function refreshExamList(){
 
-  const examList =
+  const list =
     document.getElementById("examList");
 
-  examList.innerHTML =
-    `<option value="">
-      -- Chọn đề --
-    </option>`;
+  list.innerHTML="";
 
   const exams =
-    JSON.parse(
-      localStorage.getItem("exams")
-      || "[]"
-    );
+    JSON.parse(localStorage.getItem("exams")||"[]");
 
-  exams.forEach((exam,index)=>{
+  exams.forEach((e,i)=>{
 
-    examList.innerHTML += `
-      <option value="${index}">
-        ${exam.level ? "["+exam.level+"]" : ""} ${exam.title}
+    list.innerHTML+=`
+      <option value="${i}">
+        ${e.level? "["+e.level+"]":""} ${e.title}
       </option>
     `;
 
@@ -174,33 +280,24 @@ function refreshExamList(){
 
 }
 
-/* PDF TO TEXT */
+/* PDF */
+
 async function extractText(file){
 
-  const arrayBuffer =
-    await file.arrayBuffer();
+  const data = await file.arrayBuffer();
 
   const pdf =
-    await pdfjsLib.getDocument({
-      data:arrayBuffer
-    }).promise;
+    await pdfjsLib.getDocument({data}).promise;
 
-  let text = "";
+  let text="";
 
   for(let i=1;i<=pdf.numPages;i++){
 
-    const page =
-      await pdf.getPage(i);
+    const page = await pdf.getPage(i);
 
-    const content =
-      await page.getTextContent();
+    const content = await page.getTextContent();
 
-    const strings =
-      content.items.map(
-        item=>item.str
-      );
-
-    text += strings.join(" ") + "\n";
+    text += content.items.map(i=>i.str).join(" ")+"\n";
 
   }
 
@@ -209,229 +306,142 @@ async function extractText(file){
 }
 
 /* PARSE */
+
 function parseQuestions(text){
 
-  const questions = [];
-
   const blocks =
-    text.match(
-      /Câu\s*\d+[\s\S]*?(?=Câu\s*\d+|$)/g
-    );
+    text.match(/Câu\s*\d+[\s\S]*?(?=Câu\s*\d+|$)/g);
 
-  if(!blocks) return questions;
+  if(!blocks) return [];
 
-  blocks.forEach(block=>{
+  return blocks.map(b=>{
 
-    try{
+    const q =
+      b.match(/Câu\s*\d+[:.]?\s*(.*?)\s*A\./);
 
-      const q =
-        block.match(
-          /Câu\s*\d+[:.]?\s*(.*?)\s*A\./
-        );
+    const opt =
+      b.match(/A\.\s*(.*?)\s*B\.\s*(.*?)\s*C\.\s*(.*?)\s*D\.\s*(.*?)(Đáp án|$)/);
 
-      if(!q) return;
+    const ans =
+      b.match(/Đáp án[:.]?\s*([ABCD])/);
 
-      const question = q[1].trim();
+    const map={A:0,B:1,C:2,D:3};
 
-      const opt =
-        block.match(
-          /A\.\s*(.*?)\s*B\.\s*(.*?)\s*C\.\s*(.*?)\s*D\.\s*(.*?)(Đáp án[:.]?\s*[ABCD]|$)/
-        );
-
-      if(!opt) return;
-
-      const options = [
-        opt[1].trim(),
-        opt[2].trim(),
-        opt[3].trim(),
-        opt[4].trim()
-      ];
-
-      const ans =
-        block.match(/Đáp án[:.]?\s*([ABCD])/);
-
-      let answer = 0;
-
-      if(ans){
-
-        const map = {
-          A:0,B:1,C:2,D:3
-        };
-
-        answer = map[ans[1]];
-      }
-
-      questions.push({
-        question,
-        options,
-        answer
-      });
-
-    }catch(e){}
+    return {
+      question:q? q[1]:"",
+      options:opt? [opt[1],opt[2],opt[3],opt[4]]:[],
+      answer:ans? map[ans[1]]:0
+    };
 
   });
-
-  return questions;
 
 }
 
 /* UPLOAD */
+
 async function uploadPDF(){
 
-  const file =
-    document.getElementById("pdfInput").files[0];
+  const file=document.getElementById("pdfInput").files[0];
 
-  if(!file){
-    alert("Chọn file PDF");
-    return;
+  const text=await extractText(file);
+
+  const questions=parseQuestions(text);
+
+  let subject=document.getElementById("subject").value;
+
+  let level=null;
+
+  if(subject==="english_basic"){
+    subject="english";level="basic";
   }
 
-  const text =
-    await extractText(file);
-
-  const questions =
-    parseQuestions(text);
-
-  const value =
-    document.getElementById("subject").value;
-
-  let subject = value;
-  let level = null;
-
-  if(value === "english_basic"){
-    subject = "english";
-    level = "basic";
+  if(subject==="english_advanced"){
+    subject="english";level="advanced";
   }
 
-  if(value === "english_advanced"){
-    subject = "english";
-    level = "advanced";
-  }
+  const exams=JSON.parse(localStorage.getItem("exams")||"[]");
 
-  const exam = {
+  exams.push({
     title:file.name,
     subject,
     level,
     questions
-  };
+  });
 
-  const exams =
-    JSON.parse(
-      localStorage.getItem("exams")
-      || "[]"
-    );
-
-  exams.push(exam);
-
-  localStorage.setItem(
-    "exams",
-    JSON.stringify(exams)
-  );
-
-  alert("Đã convert " + questions.length + " câu");
+  localStorage.setItem("exams",JSON.stringify(exams));
 
   refreshExamList();
 
+  alert("Done " + questions.length);
+
 }
 
-/* LOAD EXAM */
+/* LOAD */
+
 function loadExam(){
 
-  const index =
-    document.getElementById("examList").value;
+  const i=document.getElementById("examList").value;
 
-  if(index==="") return;
+  const exams=JSON.parse(localStorage.getItem("exams")||"[]");
 
-  const exams =
-    JSON.parse(
-      localStorage.getItem("exams")
-      || "[]"
-    );
+  currentExam=exams[i];
 
-  currentExam = exams[index];
-
-  renderExam(currentExam);
+  render();
 
 }
 
 /* RENDER */
-function renderExam(exam){
 
-  let html = `<h2>${exam.title}</h2>`;
+function render(){
 
-  exam.questions.forEach((q,i)=>{
+  let html="";
 
-    html += `
-      <div class="question">
+  currentExam.questions.forEach((q,i)=>{
 
-        <h3>Câu ${i+1}: ${q.question}</h3>
+    html+=`
+      <div>
+        <p><b>${q.question}</b></p>
     `;
 
     q.options.forEach((o,j)=>{
 
-      html += `
+      html+=`
         <label class="option">
-
-          <input type="radio"
-            name="q${i}"
-            value="${j}"
-          />
-
+          <input type="radio" name="q${i}" value="${j}">
           ${o}
-
         </label>
       `;
 
     });
 
-    html += `</div>`;
+    html+="</div>";
 
   });
 
-  html += `
-    <button onclick="submitExam()">
-      Nộp bài
-    </button>
-  `;
+  html+=`<button onclick="submit()">Submit</button>`;
 
-  document.getElementById("examContent")
-    .innerHTML = html;
+  document.getElementById("examContent").innerHTML=html;
 
 }
 
 /* SUBMIT */
-function submitExam(){
 
-  if(!currentExam) return;
+function submit(){
 
-  let score = 0;
+  let score=0;
 
   currentExam.questions.forEach((q,i)=>{
 
-    const sel =
-      document.querySelector(
-        `input[name="q${i}"]:checked`
-      );
+    const s=document.querySelector(`input[name=q${i}]:checked`);
 
-    if(sel && Number(sel.value)===q.answer){
-      score++;
-    }
+    if(s && +s.value===q.answer) score++;
 
   });
 
-  const percent =
-    Math.round(
-      score/currentExam.questions.length*100
-    );
-
-  document.getElementById("scoreBox").innerHTML = `
-    <h2>${score}/${currentExam.questions.length}</h2>
-    <p>${percent}%</p>
-  `;
+  document.getElementById("scoreBox").innerHTML=
+    `Score: ${score}/${currentExam.questions.length}`;
 
 }
-
-refreshExamList();
 
 </script>
 
